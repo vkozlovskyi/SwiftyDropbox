@@ -477,11 +477,12 @@ open class RpcRequest<RSerial: JSONSerializer, ESerial: JSONSerializer>: Request
     }
 
     @discardableResult open func response(queue: DispatchQueue? = nil, completionHandler: @escaping (RSerial.ValueType?, CallError<ESerial.ValueType>?) -> Void) -> Self {
-        self.request.validate().response(queue: queue) { response in
+        self.request.validate().response(queue: queue) { [weak self] response in
+          guard let _self = self else { return }
             if let error = response.error {
-                completionHandler(nil, self.handleResponseError(response.response, data: response.data!, error: error))
+                completionHandler(nil, _self.handleResponseError(response.response, data: response.data!, error: error))
             } else {
-                completionHandler(self.responseSerializer.deserialize(SerializeUtil.parseJSON(response.data!)), nil)
+                completionHandler(_self.responseSerializer.deserialize(SerializeUtil.parseJSON(response.data!)), nil)
             }
         }
         return self
@@ -509,11 +510,12 @@ open class UploadRequest<RSerial: JSONSerializer, ESerial: JSONSerializer>: Requ
     }
 
     @discardableResult open func response(queue: DispatchQueue? = nil, completionHandler: @escaping (RSerial.ValueType?, CallError<ESerial.ValueType>?) -> Void) -> Self {
-        self.request.validate().response(queue: queue) { response in
+        self.request.validate().response(queue: queue) { [weak self] response in
+          guard let _self = self else { return }
             if let error = response.error {
-                completionHandler(nil, self.handleResponseError(response.response, data: response.data!, error: error))
+                completionHandler(nil, _self.handleResponseError(response.response, data: response.data!, error: error))
             } else {
-                completionHandler(self.responseSerializer.deserialize(SerializeUtil.parseJSON(response.data!)), nil)
+                completionHandler(_self.responseSerializer.deserialize(SerializeUtil.parseJSON(response.data!)), nil)
             }
         }
         return self
@@ -546,16 +548,17 @@ open class DownloadRequestFile<RSerial: JSONSerializer, ESerial: JSONSerializer>
     }
 
     @discardableResult open func response(queue: DispatchQueue? = nil, completionHandler: @escaping ((RSerial.ValueType, URL)?, CallError<ESerial.ValueType>?) -> Void) -> Self {
-        self.request.validate().response(queue: queue) { response in
+        self.request.validate().response(queue: queue) { [weak self] response in
+          guard let _self = self else { return }
             if let error = response.error {
-                completionHandler(nil, self.handleResponseError(response.response, data: self.errorMessage, error: error))
+                completionHandler(nil, _self.handleResponseError(response.response, data: _self.errorMessage, error: error))
             } else {
                 let headerFields: [AnyHashable : Any] = response.response!.allHeaderFields
                 let result = caseInsensitiveLookup("Dropbox-Api-Result", dictionary: headerFields)!
                 let resultData = result.data(using: .utf8, allowLossyConversion: false)
-                let resultObject = self.responseSerializer.deserialize(SerializeUtil.parseJSON(resultData!))
+                let resultObject = _self.responseSerializer.deserialize(SerializeUtil.parseJSON(resultData!))
 
-                completionHandler((resultObject, self.urlPath!), nil)
+                completionHandler((resultObject, _self.urlPath!), nil)
             }
         }
         return self
@@ -583,14 +586,15 @@ open class DownloadRequestMemory<RSerial: JSONSerializer, ESerial: JSONSerialize
     }
 
     @discardableResult open func response(queue: DispatchQueue? = nil, completionHandler: @escaping ((RSerial.ValueType, Data)?, CallError<ESerial.ValueType>?) -> Void) -> Self {
-        self.request.validate().response(queue: queue) { response in
+        self.request.validate().response(queue: queue) { [weak self] response in
+          guard let _self = self else { return }
             if let error = response.error {
-                completionHandler(nil, self.handleResponseError(response.response, data: response.data, error: error))
+                completionHandler(nil, _self.handleResponseError(response.response, data: response.data, error: error))
             } else {
                 let headerFields: [AnyHashable : Any] = response.response!.allHeaderFields
                 let result = caseInsensitiveLookup("Dropbox-Api-Result", dictionary: headerFields)!
                 let resultData = result.data(using: .utf8, allowLossyConversion: false)
-                let resultObject = self.responseSerializer.deserialize(SerializeUtil.parseJSON(resultData!))
+                let resultObject = _self.responseSerializer.deserialize(SerializeUtil.parseJSON(resultData!))
 
                 completionHandler((resultObject, response.data!), nil)
             }
